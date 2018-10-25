@@ -1039,7 +1039,8 @@ function deleteMarker() {
       method: "DELETE",
       success : function(data) {
         closeSidebar();
-        lastSelectedMarker.remove();
+        console.log(lastSelectedMarker)
+        lastSelectedMarker.deleteMarker();
         resetMarkerTitleAndDescription();
         //refreshMarkers();
         //^ a function to clear the current layer and repopulate with data from the server
@@ -1076,8 +1077,13 @@ function hideMarkerMenu() {
             id: id,
             elementType : elementType,
             draggable: true,
+            lastLatLng: lastLatLng,
             flyTo : function() {
-              map.flyTo(lastLatLng, 9);
+              map.flyTo(this.lastLatLng, 9);
+              console.log(this.lastLatLng)
+            },
+            deleteMarker : function() {
+              mp.remove();
             },
             selectThisMarker: function() {
 
@@ -1112,6 +1118,7 @@ function hideMarkerMenu() {
                           $('.elementImage').css('background-image', 'url('+mapImageURL+')');
                         } else {
                           $('.elementImage').hide();
+                          $('.elementImage').css('background-image', 'url()');
                           $('.addNewImageLink > input').val('');
                         }
 
@@ -1148,6 +1155,8 @@ function hideMarkerMenu() {
 
         mp.on('dragend', function() {
 
+          //TODO: Update marker latlng after drag end
+
           if (id) {
 
         var coord = String(mp.getLatLng());
@@ -1161,8 +1170,11 @@ function hideMarkerMenu() {
            data: {lastLatLng: latLngArray},
            success : function(data) {
              console.log(data);
+             mp.options.lastLatLng = latLngArray;
            }    
            });
+
+            
 
 
         
@@ -1177,6 +1189,7 @@ function hideMarkerMenu() {
 
         if (selectedMarkerID == id) {
           mp.options.selectThisMarker();
+          lastSelectedMarker = mp;
           openSidebar();
         }
         
@@ -1215,11 +1228,18 @@ function hideMarkerMenu() {
               elementType : elementType,
               markerLayer : ""
             }, success : function(data) {
-
-              addMarkerData(lastLatLng, description, title, elementType, markerLayer, id, markerBioImage)
+              console.log(data);
+              addMarkerData(lastLatLng, description, title, elementType, markerLayer, data._id, markerBioImage)
 
               $('.markerTitle').text(title);
               $('.markerDescription').html(description);
+              $('#place').attr("data-marker-id", data._id);
+
+              if (!markerBioImage) {
+                $('.elementImage').css('background-image', 'url()');
+                $('.elementImage').hide();
+              }
+
               openSidebar();
             
             }
@@ -1273,6 +1293,7 @@ function hideMarkerMenu() {
                           $('.elementImage').css('background-image', 'url('+mapImageURL+')');
                         } else {
                           $('.elementImage').hide();
+                          $('.elementImage').css('background-image', 'url()');
                           $('.addNewImageLink > input').val('');
                         }
 

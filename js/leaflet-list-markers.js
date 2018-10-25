@@ -59,13 +59,20 @@ L.Control.ListMarkers = L.Control.extend({
 			.disableClickPropagation(a)
 			.on(a, 'click', L.DomEvent.stop, this)
 			.on(a, 'click', function(e) {
-				this._moveTo( layer.getLatLng() );
+				// map.flyTo(layer.getLatLng(), 9);
+				// this._moveTo( layer.getLatLng() );
+				console.log(layer);
+				layer.options.selectThisMarker();
+				layer.options.flyTo();
 			}, this)
 			.on(a, 'mouseover', function(e) {
 				that.fire('item-mouseover', {layer: layer });
+				layer.openPopup();
+				
 			}, this)
 			.on(a, 'mouseout', function(e) {
 				that.fire('item-mouseout', {layer: layer });
+				layer.closePopup();
 			}, this);			
 
 			

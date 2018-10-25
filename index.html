@@ -168,6 +168,7 @@ i.fa.noIconPadding {
     height: 300px;
     width: 100%;
     background-size: 100%;
+    background-repeat: no-repeat;
 }
 
 .elementImage {
@@ -373,12 +374,7 @@ div#place > h1.sidebar-header > span, div#place .markerTitle, div#place .markerD
     <div class="item">
       <i class="dropdown icon"></i>
       Change map
-      <div class="menu">
-        <div class="item active">The Kharlian Continents</div>
-        <div class="item">Meridiem</div>
-        <div class="item">The Underdark</div>
-        <div class="item">The Moon</div>
-        <div class="item">The Astral Plane</div>
+      <div class="menu mapContainer">
       </div>
     </div>
     <div class="divider"></div>
@@ -491,7 +487,7 @@ div#place > h1.sidebar-header > span, div#place .markerTitle, div#place .markerD
 
     <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"></script>
     <script src="js/leaflet-sidebar.js"></script>
-    <script src="js/leaflet-list-markers.js"></script>
+    
     <script src="js/jquery-3.3.1.min.js"></script>
     <script src="js/semantic.js"></script>
     <script>
@@ -703,10 +699,23 @@ var storedElementTypes = [{
 //     }
 // }
 
+var activeItem = "";
 for (var i = 0; i < storedMaps.length; i++) {
   if (storedMaps[i]._id == selectedMapID) {
     mapObject = storedMaps[i];
+    activeItem = "active";
   }
+
+  
+
+
+
+  var mapItemTemplate = '<a href="/map/#/'+storedMaps[i]._id+'/" class="item '+activeItem+'" id="'+storedMaps[i]._id+'">'+storedMaps[i].title+'</a>'
+
+  $('.mapContainer').append(mapItemTemplate);
+
+  activeItem = "";
+
 }
 
 main(mapObject, storedElementTypes, searchIndex);
@@ -951,6 +960,10 @@ $('body').on('click', '.quickAddButton', function() {
   hideMarkerMenu();
 })
 
+$('body').on('click', '.mapContainer > .item', function() {
+  window.location.reload();
+})
+
 $('body').on('click', '.cancelMenuButton', function() {
   hideMarkerMenu();
 })
@@ -1062,12 +1075,66 @@ function hideMarkerMenu() {
             id: id,
             elementType : elementType,
             draggable: true,
+            flyTo : function() {
+              map.flyTo(lastLatLng, 9);
+            },
+            selectThisMarker: function() {
+
+      $('.markerMenu').hide();
+
+      lastSelectedMarker = this;
+      var marker = this;
+      console.log(marker)
+
+        // Handle sidebar stuff
+        console.log(marker)
+
+                     $.ajax({
+                    url: appInit.markerSource + marker.id,
+                    method: "GET",
+                    success: function(data) {
+
+                    window.location.hash = '#/'+selectedMapID+'/marker/' + marker.id;
+
+                        markerObject = data;
+
+                        var mapImageURL = markerObject.markerBioImage;
+
+
+                        //Retrieve marker info
+                        $('.markerTitle').text(markerObject.title);
+                        $('.markerDescription').html(markerObject.description);
+                        $('#place').attr('data-marker-id', markerObject._id);
+                        if (mapImageURL) {
+                          $('.addNewImageLink > input').val(mapImageURL);
+                          $('.elementImage').show();
+                          $('.elementImage').css('background-image', 'url('+mapImageURL+')');
+                        } else {
+                          $('.elementImage').hide();
+                          $('.addNewImageLink > input').val('');
+                        }
+
+
+                        if ($('#editMarker').hasClass('disabled')) {
+                          $('#editMarker, #deleteMarker, #addMapToMarker').removeClass('disabled');
+                        }
+
+                        openSidebar();
+
+                    }
+                })
+
+        
+
+    }
             
         }).bindPopup("<div data-attr-id='"+id+"'<b>" + title + "</b>").addTo(markersLayer);
 
 
         mp.on('click', function(e) {
-            selectMarker(e.target, markerBioImage);
+            // selectMarker(e.target, markerBioImage);
+            this.options.selectThisMarker();
+            this.options.flyTo();
         });
 
         mp.on('mouseover', function(e) {
@@ -1096,7 +1163,7 @@ function hideMarkerMenu() {
 
 
         
-        //Update DB
+        mp.options.selectThisMarker();
 
 
         });
@@ -1106,7 +1173,7 @@ function hideMarkerMenu() {
         $('.markerTitleInput, .markerDescriptionInput').val('');
 
         if (selectedMarkerID == id) {
-          selectMarker(mp)
+          mp.options.selectThisMarker();
           openSidebar();
         }
         
@@ -1173,6 +1240,8 @@ function hideMarkerMenu() {
 
     function selectMarker(marker, mapImageURL) {
 
+      $('.markerMenu').hide();
+
       lastSelectedMarker = marker;
 
 
@@ -1187,13 +1256,14 @@ function hideMarkerMenu() {
                     window.location.hash = '#/'+selectedMapID+'/marker/' + marker.options.id;
 
                         markerObject = data;
+
                         var mapImageURL = markerObject.markerBioImage;
 
 
                         //Retrieve marker info
-                        $('.markerTitle').text(marker.options.title);
-                        $('.markerDescription').html(marker.options.description);
-                        $('#place').attr('data-marker-id', marker.options.id);
+                        $('.markerTitle').text(markerObject.title);
+                        $('.markerDescription').html(markerObject.description);
+                        $('#place').attr('data-marker-id', markerObject._id);
                         if (mapImageURL) {
                           $('.addNewImageLink > input').val(mapImageURL);
                           $('.elementImage').show();
@@ -1317,8 +1387,14 @@ function hideMarkerMenu() {
     //         }
     //     });
 
+
+
+
+
 }
     </script>
+
+    <script src="js/leaflet-list-markers.js"></script>
 
   </body>
 </html>

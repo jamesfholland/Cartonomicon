@@ -496,7 +496,8 @@ div#place > h1.sidebar-header > span, div#place .markerTitle, div#place .markerD
     appTitle: "Worldmappy",
     mapSource: "http://192.241.199.220/maps/",
     markerLayerSource: "http://192.241.199.220/marker-layers/",
-    markerSource: "http://192.241.199.220/markers/"
+    markerSource: "http://192.241.199.220/markers/",
+    limitString: "?$limit"
 }
 
 var selectedMapID = window.location.hash.split('/')[1] || ''; //If user is accessing a specific map
@@ -513,7 +514,7 @@ var storedMarkers;
 
 //Maps
 $.ajax({
-    url: appInit.mapSource,
+    url: appInit.mapSource + appInit.limitString,
     method: "GET",
     success: function(data) {
 
@@ -522,7 +523,7 @@ $.ajax({
 
         //Marker layers
         $.ajax({
-            url: appInit.markerLayerSource,
+            url: appInit.markerLayerSource + appInit.limitString,
             method: "GET",
             success: function(data) {
 
@@ -531,7 +532,7 @@ $.ajax({
 
                 //Markers
                 $.ajax({
-                    url: appInit.markerSource,
+                    url: appInit.markerSource + appInit.limitString,
                     method: "GET",
                     success: function(data) {
 
@@ -1147,6 +1148,8 @@ function hideMarkerMenu() {
 
         mp.on('dragend', function() {
 
+          if (id) {
+
         var coord = String(mp.getLatLng());
         latLngArray = coord.split('(')[1].split(')')[0].split(', ');
 
@@ -1164,7 +1167,7 @@ function hideMarkerMenu() {
 
         
         mp.options.selectThisMarker();
-
+      } else {"No ID found for this marker."}
 
         });
 

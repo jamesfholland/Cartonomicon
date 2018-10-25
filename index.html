@@ -1,0 +1,1317 @@
+<html>
+  <!-- See also: http://kempe.net/blog/2014/06/14/leaflet-pan-zoom-image.html -->
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css">
+    <link rel="stylesheet" type="text/css" href="css/semantic.css">
+    <link rel="stylesheet" href="css/leaflet-sidebar.css" />
+    <link rel="stylesheet" href="css/leaflet-list-markers.css" />
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <style>
+    #image-map {
+      width: 100vw;
+      height: 100vh;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
+
+    /* The side navigation menu */
+
+/*.leaflet-control-zoom.leaflet-bar.leaflet-control {
+    margin-top: 80px;
+    margin-left: 12px;
+}*/
+
+@font-face {
+    font-family: "Breathe Fire";
+    src: url("fonts/Breathe-Fire.ttf") format("truetype");
+}
+
+body{ 
+margin: 0; 
+font-family: "Open Sans";
+overflow: hidden;
+}
+
+a {
+    color: #1d569f;
+    cursor: pointer;
+}
+
+i.fa {
+    padding-top: 12px;
+}
+
+.changeMapLink {
+    font-size: 12px;
+    padding-left: 4px;
+}
+
+
+.leaflet-control-attribution {
+    display: none;
+}
+
+.list-markers-li a {
+    color: #000;
+}
+
+div#sidebar {
+    border: 0;
+    border-radius: 0;
+    top: 0;
+    bottom: 0;
+    left: 0;
+}
+
+.sidebar-content {
+    background-color: #f3f3f3;
+}
+
+.sidebar-tabs {
+    box-shadow: 2px 0px 1px #00000014;
+    z-index: 9999;
+}
+
+.sidebar-pane.not(#place) > .sidebar-header {
+    margin: -10px -20px 0;
+}
+
+/*#sidebar {
+        height: 50vh;
+    min-height: 250px;
+}*/
+
+/*.list-markers.leaflet-control {
+    display: none;
+}
+
+.list-markers.leaflet-control.active {
+    display: block;
+}*/
+
+.leaflet-popup-content {
+    text-align: center;
+    font-size: 24px;
+    width: auto !important;
+    font-family: "Breathe Fire";
+}
+
+
+#image-map .leaflet-top.leaflet-left {
+    left: 44px;
+}
+
+.ui.image.icon-mapPin > img {
+    max-width: 140px;
+    padding: 0px 25px 0px 25px;
+    margin: 0 auto;
+}
+
+i.fa.checkmark {
+    left: auto;
+    bottom: 0;
+    right: 0em;
+    border-radius: 0px;
+    border-top-right-radius: inherit;
+    border-bottom-right-radius: inherit;
+    -webkit-box-shadow: 1px 0px 0px 0px transparent inset;
+    box-shadow: 1px 0px 0px 0px transparent inset;
+    position: absolute;
+    height: 100%;
+    line-height: 1;
+    border-radius: 0px;
+    border-top-left-radius: inherit;
+    border-bottom-left-radius: inherit;
+    text-align: center;
+    margin: 0em;
+    width: 2.57142857em;
+    background-color: rgba(0, 0, 0, 0.05);
+    color: '';
+    -webkit-box-shadow: -1px 0px 0px 0px transparent inset;
+    box-shadow: -1px 0px 0px 0px transparent inset;
+}
+
+.markerType {
+    cursor: pointer;
+}
+
+.ui.medium.image.icon-mapPin {width: 140px;}
+
+.markerColumns {
+    width: 100%;
+}
+
+.markerColumns i {
+    padding-right: 8px;
+}
+
+.markerType {
+    margin: 13px;
+}
+
+.markerForm {
+    display: none;
+}
+
+i.fa.noIconPadding {
+    padding-top: 0px;
+}
+
+
+.padded.markerForm {
+    margin-top: 20px;
+}
+
+.elementImage {
+    height: 300px;
+    width: 100%;
+    background-size: 100%;
+}
+
+.elementImage {
+  display: none;
+}
+
+div#place {
+padding: 0px;
+}
+
+.sidebar-pane {
+    padding-top: 0px;
+}
+
+div#place > h1.sidebar-header > span, div#place .markerTitle, div#place .markerDescription {padding: 10px 10px;}
+
+.markerMenu {
+  z-index: 9999 !important;
+}
+
+.ui.right.floated.menu.markerContextMenu {
+    margin-right: 10px;
+    margin-top: 10px;
+    margin-bottom: 2px;
+}
+
+.markerTitle[contenteditable="true"],
+.markerDescription[contenteditable="true"] {
+    border: 1px solid #d7d7d7;
+}
+
+.leaflet-popup-close-button {
+    display: none;
+}
+
+
+
+
+/* Add new css above this line */
+
+
+
+
+/* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
+@media screen and (max-height: 450px) {
+    .sidenav {padding-top: 15px;}
+    .sidenav a {font-size: 18px;}
+}
+    </style>
+  </head>
+  <body>
+
+<div class="ui modal addMarker">
+  <i class="fa fa-close close"></i>
+  <div class="header">
+    Add marker
+  </div>
+  <div class="image content">
+    <div class="ui medium image icon-mapPin">
+      <img src="img/map-pin-icon.png">
+    </div>
+    <div class="markerColumns">
+      <h2 class="ui header">Link an existing element, or create a new one.</h2>
+      <div class="ui vertical stripe segment">
+    <div class="ui equal width stackable internally celled grid">
+        <div class="column">
+          <h3> <i class="fa fa-link"></i> Link existing</h3>
+          <p>Select from existing elements</p>
+          <div class="ui category search">
+  <div class="ui fluid icon input">
+    <input class="prompt" type="text" placeholder="Search people, places things...">
+    <i class="search icon"></i>
+  </div>
+  <div class="results"></div>
+</div>
+        </div>
+        <div class="column">
+          <h3><i class="fa fa-plus"></i> Create new</h3>
+          <p>Add a new element to your map</p>
+          <div class="ui floating labeled icon dropdown button createNewElementDropdown">
+  <i class="add user icon"></i>
+  <span class="text">Add new element...</span>
+  <div class="menu elementDropdownContainer">
+    <div class="header">
+      Elements types on this map
+    </div>
+    <div class="elementTypeContainer"></div>
+    <div class="header containerFooter">
+      Create new element type
+    </div>
+    <div class="item">
+      <i class="fa fa-plus noIconPadding"></i>
+      New element type...
+    </div>
+  </div>
+</div>
+<div class="padded markerForm">
+
+<div class="ui form">
+  <div class="field">
+    <label>Marker title</label>
+    <input class="ui input markerTitleInput">
+  </div>
+<div class="field">
+    <label>Marker description</label>
+    <textarea class="markerDescriptionInput" rows="2"></textarea>
+  </div>
+</div>
+</div>
+        </div>
+    </div>
+  </div>
+    </div>
+  </div>
+  <div class="actions">
+    <div class="ui black deny button">
+      Cancel
+    </div>
+    <div class="ui positive right labeled icon button addMarkerButton">
+      Add marker
+      <i class="fa fa-map-marker checkmark"></i>
+    </div>
+  </div>
+</div>
+
+<div id="sidebar" class="sidebar collapsed">
+        <!-- Nav tabs -->
+        <div class="sidebar-tabs">
+            <ul role="tablist">
+                <li><a href="#home" role="tab"><i class="fa fa-bars"></i></a></li>
+                <li><a href="#map" role="tab"><i class="fa fa-map"></i></a></li>
+                <li><a href="#place" role="tab"><i class="fa fa-map-pin"></i></a></li>
+            </ul>
+
+            <ul role="tablist">
+                <li><a href="#settings" role="tab"><i class="fa fa-gear"></i></a></li>
+            </ul>
+        </div>
+
+        <!-- Tab panes -->
+        <div class="sidebar-content">
+            <div class="sidebar-pane" id="home">
+                <h1 class="sidebar-header">
+                    <span class="appTitle"></span>
+                    <span class="sidebar-close"><i class="fa fa-caret-left noIconPadding"></i></span>
+                </h1>
+
+                <h2 class="ui header">Start adding markers!</h2>
+
+                <p>Click anywhere on the map to open the marker manager and add a new place/person/thing.</p>
+                <div class="ui divider"></div>
+                
+                <h2>
+                <div class="ui dropdown">
+  <div class="text">Everything</div>
+  <i class="dropdown icon"></i>
+  <div class="menu">
+    <div class="item active">Everything</div>
+    <div class="item">People</div>
+    <div class="item">Places</div>
+    <div class="item">Artifacts</div>
+
+  </div>
+</div>
+</h2>
+
+<div class="ui category search">
+  <div class="ui fluid icon input">
+    <input class="prompt" type="text" placeholder="Filter people, places things...">
+    <i class="filter icon"></i>
+  </div>
+  <div class="results"></div>
+</div>
+<div class="markerTypeContainer">
+<div class="markerType"><img class="ui avatar image" src="img/artifacts.png"></i>Codex page of Time</div>
+<div class="markerType"><img class="ui avatar image" src="img/people.png"></i>Gil Tidemaker</div>
+<div class="markerType"><img class="ui avatar image" src="img/places.png"></i>Greendale</div>
+<div class="markerType"><img class="ui avatar image" src="img/people.png"></i>Eian Smarth</div>
+<div class="markerType"><img class="ui avatar image" src="img/people.png"></i>Overlord Vergoth</div>
+<div class="markerType"><img class="ui avatar image" src="img/places.png"></i>Laboo</div>
+<div class="markerType"><img class="ui avatar image" src="img/places.png"></i>Ganelon</div>
+<div class="markerType"><img class="ui avatar image" src="img/artifacts.png"></i>Skyblade</div>
+</div>
+            </div>
+
+            <div class="sidebar-pane" id="map">
+                <h1 class="sidebar-header">
+                    <span>Current map</span>
+                    <span class="sidebar-close"><i class="fa fa-caret-left"></i></span>
+                </h1>
+
+                <h2 class="mapTitle"><div class="ui dropdown">
+  <div class="mapTitleHeader text"></div>
+  <i class="dropdown icon"></i>
+  <div class="menu">
+    <div class="item">
+      <i class="dropdown icon"></i>
+      Change map
+      <div class="menu">
+        <div class="item active">The Kharlian Continents</div>
+        <div class="item">Meridiem</div>
+        <div class="item">The Underdark</div>
+        <div class="item">The Moon</div>
+        <div class="item">The Astral Plane</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="item">New map</div>
+    <div class="item">Edit map description</div>
+    <div class="item">Copy map</div>
+    <div class="item"><i class="trash icon"></i> Delete map</div>
+  </div>
+</div></h2>
+                <p class="mapDescription"></p>
+                <h3 class="currentMapLayer">
+                    <div class="ui horizontal divider">
+        Current layer
+      </div>
+                    <div class="ui dropdown">
+  <div class="text">Kingdoms</div>
+  <i class="dropdown icon"></i>
+  <div class="menu">
+    <div class="item">
+      <i class="dropdown icon"></i>
+      Change marker layer
+      <div class="menu">
+        <div class="item active">Kingdoms</div>
+        <div class="item">People</div>
+        <div class="item">Combat sites</div>
+        <div class="item">Journey of the Myriad</div>
+        <div class="item">Sacred Shrines</div>
+        <div class="item">Artifacts</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="item">New layer</div>
+    <div class="item">Edit layer description</div>
+    <div class="item">Copy layer</div>
+    <div class="item"><i class="trash icon"></i> Delete layer</div>
+  </div>
+</div>
+                </h3>
+
+                <p>Showing the capital cities of each kingdom in the known civilized Kharlian world.</p>
+                <p>The <b class="currentMarkerLayerTitle">Kingdoms</b> layer of <b class="currentMapLayerTitle">The Kharlian Continents</b> contains the following kinds of markers:</p>
+                <div class="markerTypeContainer">
+                  
+                </div>
+    
+    <div class="markerType createNewMarkerType">
+      <i class="fa fa-plus noIconPadding"></i>
+      New element type...
+    </div>
+ 
+            </div>
+
+            <div class="sidebar-pane" id="place">
+                <h1 class="sidebar-header">
+                    <span>Current marker</span>
+                    <span class="sidebar-close"><i class="fa fa-caret-left noIconPadding"></i></span>
+                </h1>
+                <div class="elementImage"></div>
+
+        <div class="ui right floated main menu markerContextMenu">
+        <a class="icon item disabled" id="editMarker" title="Edit marker">
+          <i class="edit icon"></i>
+        </a>
+        <div class="ui language dropdown right floating icon item disabled" id="deleteMarker" title="Delete marker">
+          <i class="trash icon"></i>
+        </div>
+      </div>
+
+      <div class="ui right floated main menu markerContextMenu">
+        
+        <div class="ui language dropdown right floating icon item disabled" id="addMapToMarker" title="Link a map">
+          <span style="
+    font-weight: bold;
+    font-size: 14px;
+">MAP</span>
+        <div class="menu" tabindex="-1"></div></div>
+      </div>
+
+                <br>
+                <br>
+                <h2 contenteditable="false" class="markerTitle">No marker selected</h2>
+                <div class="ui fluid right icon input addNewImageLink" style="display: none">
+                <input type="text" placeholder="Add an image link">
+                <i class="image icon"></i>
+              </div>
+                <p contenteditable="false" class="markerDescription">Select a marker on the map, its information will appear in this pane.</a></p>
+            </div>
+
+            <div class="sidebar-pane" id="settings">
+                <h1 class="sidebar-header">Settings<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
+                <h1 class="lorem">Shit what should go on the settings screen</h1>
+            </div>
+        </div>
+    </div>
+
+<!-- Add all page content inside this div if you want the side nav to push page content to the right (not used if you only want the sidenav to sit on top of the page -->
+
+    
+
+  <div class="ui dropdown">
+    <div class="menu transition markerMenu" tabindex="-1">
+      <div class="item addNewElementButton">New element...</div>
+      <div class="item quickAddButton">Quick-add marker</div>
+      <div class="divider"></div>
+      <div class="item cancelMenuButton">Cancel</div>
+  </div>
+</div>
+
+<div id="image-map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"></script>
+    <script src="js/leaflet-sidebar.js"></script>
+    <script src="js/leaflet-list-markers.js"></script>
+    <script src="js/jquery-3.3.1.min.js"></script>
+    <script src="js/semantic.js"></script>
+    <script>
+
+    var appInit = {
+    appTitle: "Worldmappy",
+    mapSource: "http://192.241.199.220/maps/",
+    markerLayerSource: "http://192.241.199.220/marker-layers/",
+    markerSource: "http://192.241.199.220/markers/"
+}
+
+var selectedMapID = window.location.hash.split('/')[1] || ''; //If user is accessing a specific map
+var selectedMarkerID = window.location.hash.split('/')[3] || '';
+
+
+$('#image-map').attr('data-map-id', selectedMapID);
+
+
+var storedMaps;
+var storedMarkerLayers;
+var storedMarkers;
+
+
+//Maps
+$.ajax({
+    url: appInit.mapSource,
+    method: "GET",
+    success: function(data) {
+
+        storedMaps = data.data;
+
+
+        //Marker layers
+        $.ajax({
+            url: appInit.markerLayerSource,
+            method: "GET",
+            success: function(data) {
+
+                storedMarkerLayers = data.data
+
+
+                //Markers
+                $.ajax({
+                    url: appInit.markerSource,
+                    method: "GET",
+                    success: function(data) {
+
+                        storedMarkers = data.data
+
+                        //Loop through markers to get all marker types
+                        var storedElementTypes = [];
+
+                        //Build search index
+                        var searchIndex = [];
+                        var customIcons = {}
+
+                        for (var i = 0; i < storedMarkers.length; i++) {
+                          storedElementTypes.push(storedMarkers[i].elementType)
+                          searchIndex.push({category: storedMarkers[i].elementType.title, title: storedMarkers[i].title})
+                        }
+
+                        var uniq = new Set(storedElementTypes.map(e => JSON.stringify(e)));
+                        var res = Array.from(uniq).map(e => JSON.parse(e));
+                        storedElementTypes = res;
+                        
+
+
+                        var lastLatLng;
+                        var lastSelectedMarker;
+
+//Init the app data
+$('.appTitle').text(appInit.appTitle);
+
+
+// var searchIndex = [{
+//         category: 'Places',
+//         title: 'Ignis Fatuus'
+//     },
+//     {
+//         category: 'Places',
+//         title: 'Beady Eye Inn'
+//     },
+//     {
+//         category: 'Places',
+//         title: 'Zeppelin of the Overlord Vergoth'
+//     },
+//     {
+//         category: 'Places',
+//         title: 'Gil Tidemaker'
+//     },
+//     {
+//         category: 'People',
+//         title: 'Bennec Brandt'
+//     },
+//     {
+//         category: 'People',
+//         title: 'Thaddius Brandt'
+//     },
+//     {
+//         category: 'People',
+//         title: 'Overlord Vergoth'
+//     },
+//     {
+//         category: 'People',
+//         title: 'Eian Smarth'
+//     },
+//     {
+//         category: 'People',
+//         title: 'Skrap the Dapper'
+//     },
+//     {
+//         category: 'Artifacts',
+//         title: 'Skyblade'
+//     },
+//     {
+//         category: 'Artifacts',
+//         title: 'The Codex page of Time'
+//     },
+//     {
+//         category: 'Artifacts',
+//         title: 'Triforce of Courage'
+//     }
+
+//     // etc
+// ];
+
+
+
+// var storedMarkers = [{
+//         lastLatLng: [-10.21875, 8.25],
+//         title: "Ignis Fatuus",
+//         description: "A wizarding academy.",
+//         elementType: "places", //Server-generated ID
+//         markerLayer: "kingdoms", //Server-generated ID
+//         _id: "1"
+//     },
+//     {
+//         lastLatLng: [-14.08, 11.684],
+//         title: "Durandal",
+//         description: "A place.",
+//         elementType: "places", //Server-generated ID
+//         markerLayer: "kingdoms", //Server-generated ID
+//         _id: "2"
+//     }
+// ]
+
+
+// var storedMaps = [{
+//         title: "The Kharlian Continents",
+//         mapImageURL: "img/worldmap.jpg",
+//         _id: "1"
+//     },
+//     {
+//         title: "Meridiem",
+//         mapImageURL: "img/worldmap.jpg",
+//         _id: "2"
+//     },
+//     {
+//         title: "The Underdark",
+//         mapImageURL: "img/worldmap.jpg",
+//         _id: "3"
+//     },
+//     {
+//         title: "The Moon",
+//         mapImageURL: "img/worldmap.jpg",
+//         _id: "4"
+//     },
+//     {
+//         title: "The Astral Plane",
+//         mapImageURL: "img/worldmap.jpg",
+//         _id: "5"
+//     }
+// ]
+
+var storedElementTypes = [{
+        _id: "1",
+        title: "Places",
+        safeTitle: "places",
+        image: "img/places.png"
+    },
+    {
+        _id: "2",
+        title: "People",
+        safeTitle: "people",
+        image: "img/people.png"
+    },
+    {
+        _id: "3",
+        title: "Artifacts",
+        safeTitle: "artifacts",
+        image: "img/artifacts.png"
+    }
+]
+
+// var mapObject = {
+//     mapTitle: "The Kharlian Continents",
+//     mapDescription: "Home to the largest bastion of civilization in the known world, the Kharlian trinity are a formerly-unified set of three continents that were fissured and blown into three by a violent, destructive event. It houses many territories such as Alberea, Lerhyn, and Ganelon.",
+//     initData: {
+//         minZoom: 5,
+//         maxZoom: 10,
+//         center: [0, 0],
+//         zoom: 0,
+//         boxZoom: true,
+//         worldCopyJump: false,
+//         crs: L.CRS.Simple,
+//         w: 9645,
+//         h: 10218,
+//         url: 'img/worldmap.jpg'
+//     }
+// }
+
+for (var i = 0; i < storedMaps.length; i++) {
+  if (storedMaps[i]._id == selectedMapID) {
+    mapObject = storedMaps[i];
+  }
+}
+
+main(mapObject, storedElementTypes, searchIndex);
+
+
+                    }
+                });
+
+            }
+        });
+
+    }
+});
+
+
+
+
+
+
+
+
+function main(mapObject, storedElementTypes, searchIndex) {
+
+
+         function getMenuPosition(mouse, direction, scrollDir) {
+         var win = $(window)[direction](),
+             scroll = $(window)[scrollDir](),
+             menu = $(settings.menuSelector)[direction](),
+             position = mouse + scroll;
+                  
+         // opening menu would pass the side of the page
+         if (mouse + menu > win && menu < mouse) 
+             position -= menu;
+      
+         return position;
+     }
+
+
+     //Validate image link
+     function checkURL(url) {
+    return(url.match(/\.(jpeg|jpg|gif|png)$/) != null);
+}
+
+
+
+
+    // Using leaflet.js to pan and zoom a big image.
+    // See also: http://kempe.net/blog/2014/06/14/leaflet-pan-zoom-image.html
+    // create the slippy map
+    var map = L.map('image-map', {
+        minZoom: 5,
+        maxZoom: 10,
+        center: [0, 0],
+        zoom: 0,
+        boxZoom: true,
+        worldCopyJump: false,
+        crs: L.CRS.Simple,
+        w: mapObject.w,
+        h: mapObject.h,
+        url: mapObject.mapImageURL
+    });
+    // dimensions of the image
+    var w = mapObject.w,
+        h = mapObject.h,
+        url = mapObject.mapImageURL;
+
+    // calculate the edges of the image, in coordinate space
+    var southWest = map.unproject([0, h], map.getMaxZoom() - 1);
+    var northEast = map.unproject([w, 0], map.getMaxZoom() - 1);
+    var bounds = new L.LatLngBounds(southWest, northEast);
+
+    // add the image overlay, 
+    // so that it covers the entire map
+    L.imageOverlay(url, bounds).addTo(map);
+    var sidebar = L.control.sidebar('sidebar').addTo(map);
+
+    // tell leaflet that the map is exactly as big as the image
+    map.setMaxBounds(bounds);
+
+    $('.mapTitle .mapTitleHeader.text').text(mapObject.title);
+    $('.mapDescription').text(mapObject.description);
+
+
+
+    var markersLayer = new L.LayerGroup(); //layer contain searched elements
+    map.addLayer(markersLayer);
+
+
+    map.on("click", function(e) {
+
+      console.log(e)
+
+        lastLatLng = [e.latlng.lat, e.latlng.lng];
+        
+        $('.markerMenu').show().css({
+                        position: "absolute",
+                        left: getMenuPosition(e.containerPoint.x, 'width', 'scrollLeft'),
+                        top: getMenuPosition(e.containerPoint.y, 'height', 'scrollTop')
+        })
+
+    });
+
+
+    //Populate element type selection dropdown
+    for (var i = 0; i < storedElementTypes.length; i++) {
+
+
+        var elementTypeTemplate = '<div class="item markerType"> \
+      <img class="ui avatar image" src="' + storedElementTypes[i].image + '"> \
+      <span class="elementID" data-element-safetitle="' + storedElementTypes[i].safeTitle + '" data-element-id="' + storedElementTypes[i]._id + '">' + storedElementTypes[i].title + '</span> \
+    </div>';
+
+        $('.containerFooter').before(elementTypeTemplate);
+        $('.markerTypeContainer').append(elementTypeTemplate)
+
+    }
+
+
+    //Populate existing markers
+    for (var i = 0; i < storedMarkers.length; i++) {
+      if (selectedMapID == storedMarkers[i].mapID) {
+        addMarkerData(storedMarkers[i].lastLatLng, storedMarkers[i].description, storedMarkers[i].title, storedMarkers[i].elementType, storedMarkers[i].markerLayer, storedMarkers[i]._id, storedMarkers[i].markerBioImage);
+        }
+      }
+    
+
+// (function ($, window) {
+
+//     $.fn.contextMenu = function (settings) {
+
+//         return this.each(function () {
+
+//             // Open context menu
+//             $(this).on("click", function (e) {
+//                 // return native menu if pressing control
+//                 if (e.ctrlKey) return;
+                
+//                 //open menu
+//                 var $menu = $(settings.menuSelector)
+//                     .data("invokedOn", $(e.target))
+//                     .show()
+//                     .css({
+//                         position: "absolute",
+//                         left: getMenuPosition(e.clientX, 'width', 'scrollLeft'),
+//                         top: getMenuPosition(e.clientY, 'height', 'scrollTop')
+//                     })
+//                     .off('click')
+//                     .on('click', 'a', function (e) {
+//                         $menu.hide();
+                
+//                         var $invokedOn = $menu.data("invokedOn");
+//                         var $selectedMenu = $(e.target);
+                        
+//                         settings.menuSelected.call(this, $invokedOn, $selectedMenu);
+//                     });
+                
+//                 return false;
+//             });
+
+//             //make sure menu closes on any click
+//             $('body').click(function () {
+//                 $(settings.menuSelector).hide();
+//             });
+//         });
+        
+//         function getMenuPosition(mouse, direction, scrollDir) {
+//             var win = $(window)[direction](),
+//                 scroll = $(window)[scrollDir](),
+//                 menu = $(settings.menuSelector)[direction](),
+//                 position = mouse + scroll;
+                        
+//             // opening menu would pass the side of the page
+//             if (mouse + menu > win && menu < mouse) 
+//                 position -= menu;
+            
+//             return position;
+//         }    
+
+//     };
+// })(jQuery, window);
+
+// $("#image-map").contextMenu({
+//     menuSelector: ".menu.markerMenu",
+//     menuSelected: function (invokedOn, selectedMenu) {
+//         var msg = "You selected the menu item '" + selectedMenu.text() +
+//             "' on the value '" + invokedOn.text() + "'";
+//         alert(msg);
+//     }
+// });
+
+
+
+//Script to control updating the contenteditable fields
+var title = $('.markerTitle').text();
+var description = $('.markerDescription').html();
+$('.markerTitle, .markerDescription').blur(function() {
+    if ($(this).hasClass('markerTitle') && title!=$(this).text()){
+        title = $(this).text();
+        
+        var markerID = $('#place').attr('data-marker-id');
+        
+        $.ajax({
+      url: appInit.markerSource + markerID,
+      method: "PATCH",
+      data: {title: title},
+      success : function(data) {
+        console.log(data);
+      }
+            
+  });
+
+
+    } else if ($(this).hasClass('markerDescription') && description!=$(this).html()){
+        description = $(this).html();
+    
+        var markerID = $('#place').attr('data-marker-id');
+
+        $.ajax({
+      url: appInit.markerSource + markerID,
+      method: "PATCH",
+      data: {description: description},
+      success : function(data) {
+        console.log(data);
+      }
+            
+  });
+
+    }
+});
+
+
+//Various handlers
+
+$('body').on('click', '.addNewElementButton', function() {
+  $('.sidebar').addClass('collapsed');
+  $('.ui.modal.addMarker').modal('show');
+  $('.markerMenu').hide();
+})
+
+$('body').on('click', '.quickAddButton', function() {
+  createMarkerFromLastLatLng("Quick marker", "No description added.");
+  hideMarkerMenu();
+})
+
+$('body').on('click', '.cancelMenuButton', function() {
+  hideMarkerMenu();
+})
+
+
+$('body').on('click', '#deleteMarker', function() {
+  deleteMarker();
+})
+
+$('body').on('click', '#editMarker', function() {
+  toggleEditMode();
+})
+
+$('body').on('click', '#addMapToMarker', function() {
+  alert("Map linking / nesting isn't quite done, sorry.")
+})
+
+$('body').on('blur', '.addNewImageLink > input ', function() {
+  if ($('.addNewImageLink > input').val().length &&
+    checkURL($('.addNewImageLink > input').val())) {
+
+    updateMarkerImage($('.addNewImageLink > input').val());
+
+  }
+})
+
+
+
+
+
+function toggleEditMode() {
+ if ($('.markerTitle').attr('contenteditable') == "true") {
+  //Turn off edit mode
+  $('.addNewImageLink').fadeToggle(); // "Add new image link" field
+  $('.markerTitle').attr('contenteditable', 'false');
+  $('.markerDescription').attr('contenteditable', 'false');
+  $('#editMarker').removeClass('active');
+ } else {
+  //Turn on edit mode
+  $('.addNewImageLink').fadeToggle(); // "Add new image link" field
+  $('.markerTitle').attr('contenteditable', 'true');
+  $('.markerDescription').attr('contenteditable', 'true');
+  $('#editMarker').addClass('active');
+ }
+}
+
+function updateMarkerImage(imageURL) {
+  
+  var markerID = $('#place').attr('data-marker-id');
+
+    if (confirm("Add new image for this marker?")) {
+  $.ajax({
+      url: appInit.markerSource + markerID,
+      method: "PATCH",
+      data: {markerBioImage : imageURL},
+      success : function(data) {
+        $('.elementImage').show();
+        $('.elementImage').css('background-image', 'url('+imageURL+')');
+        // $('.addNewImageLink > input').val('');
+      }
+            
+  });
+}
+} 
+
+function deleteMarker() {
+  var markerID = $('#place').attr('data-marker-id');
+
+  if (confirm("Are you sure?")) {
+  $.ajax({
+      url: appInit.markerSource + markerID,
+      method: "DELETE",
+      success : function(data) {
+        closeSidebar();
+        lastSelectedMarker.remove();
+        resetMarkerTitleAndDescription();
+        //refreshMarkers();
+        //^ a function to clear the current layer and repopulate with data from the server
+      }
+            
+  });
+}
+
+}
+
+function resetMarkerTitleAndDescription() {
+  $('.markerTitle').text("No marker selected")
+  $('.markerDescription').text('Select a marker on the map, its information will appear in this pane.');
+}
+
+function hideMarkerMenu() {
+  $('.markerMenu').hide();
+  $('.markerMenu > .item').removeClass('active');
+}
+
+
+    function addMarkerData(lastLatLng, description, title, elementType, markerLayer, id, markerBioImage, mapID) {
+
+      var bubbleIcon = L.icon({
+                          iconUrl: 'img/bubble.png',
+                          iconSize:     [60, 60], // size of the icon
+                          iconAnchor:   [5, 50], // point of the icon which will correspond to marker's location
+                          popupAnchor:  [20, -40] // point from which the popup should open relative to the iconAnchor
+                      });
+
+        var mp = new L.Marker(lastLatLng, {
+            description: description,
+            title: title,
+            id: id,
+            elementType : elementType,
+            draggable: true,
+            
+        }).bindPopup("<div data-attr-id='"+id+"'<b>" + title + "</b>").addTo(markersLayer);
+
+
+        mp.on('click', function(e) {
+            selectMarker(e.target, markerBioImage);
+        });
+
+        mp.on('mouseover', function(e) {
+            this.openPopup();
+        });
+
+        mp.on('mouseout', function(e) {
+            this.closePopup();
+        });
+
+        mp.on('dragend', function() {
+
+        var coord = String(mp.getLatLng());
+        latLngArray = coord.split('(')[1].split(')')[0].split(', ');
+
+        var markerID = id;
+        
+             $.ajax({
+           url: appInit.markerSource + markerID,
+           method: "PATCH",
+           data: {lastLatLng: latLngArray},
+           success : function(data) {
+             console.log(data);
+           }    
+           });
+
+
+        
+        //Update DB
+
+
+        });
+
+        $('.markerForm').hide();
+        $('.createNewElementDropdown > .text').html("Add new element...")
+        $('.markerTitleInput, .markerDescriptionInput').val('');
+
+        if (selectedMarkerID == id) {
+          selectMarker(mp)
+          openSidebar();
+        }
+        
+    }
+
+
+    function createMarkerFromLastLatLng(title, description) {
+        if (title) {
+            // var mp = new L.Marker(lastLatLng, {
+            //     description: description,
+            //     title: title,
+            //     draggable: true
+            // }).bindPopup("<b>" + title + "</b>").addTo(markersLayer);
+
+            //Get attributes from the currently-selected element type dropdown.
+            var elementTypeTitle = $('.createNewElementDropdown > .text > .elementID').text();
+            var elementTypeSafeTitle = $('.createNewElementDropdown > .text > .elementID').attr('data-element-safetitle');
+            var elementTypeImage = $('.createNewElementDropdown > .text > img').attr('src');
+            var elementType = {title: elementTypeTitle, safeTitle: elementTypeSafeTitle, image: elementTypeImage};
+
+            var currentMapID = $('#image-map').attr('data-map-id');
+
+            var markerLayer = ""; // Should be the ID of the current marker layer
+            var markerBioImage = ""; // They'll set this later on
+            var id = "";
+
+            $.ajax({
+            url: appInit.markerSource,
+            method: "POST",
+            data: {
+              mapID: currentMapID,
+              lastLatLng : lastLatLng,
+              title : title,
+              customMarkerImage : "",
+              description : description,
+              elementType : elementType,
+              markerLayer : ""
+            }, success : function(data) {
+
+              addMarkerData(lastLatLng, description, title, elementType, markerLayer, id, markerBioImage)
+
+              $('.markerTitle').text(title);
+              $('.markerDescription').html(description);
+              openSidebar();
+            
+            }
+            
+            });
+
+            //THIS FUNCTION SHOULD BE PASSED THE RESULT OF THE RESPONSE FROM THE FEATHERS SERVER,
+            //RIGHT NOW IT'S DUMMY DATA.
+
+            
+
+            
+
+        }
+
+    }
+
+    function selectMarkerByID(markerID) {
+      //TODO: THIS
+    }
+
+    function selectMarker(marker, mapImageURL) {
+
+      lastSelectedMarker = marker;
+
+
+        // Handle sidebar stuff
+        console.log(marker)
+
+                     $.ajax({
+                    url: appInit.markerSource + marker.options.id,
+                    method: "GET",
+                    success: function(data) {
+
+                    window.location.hash = '#/'+selectedMapID+'/marker/' + marker.options.id;
+
+                        markerObject = data;
+                        var mapImageURL = markerObject.markerBioImage;
+
+
+                        //Retrieve marker info
+                        $('.markerTitle').text(marker.options.title);
+                        $('.markerDescription').html(marker.options.description);
+                        $('#place').attr('data-marker-id', marker.options.id);
+                        if (mapImageURL) {
+                          $('.addNewImageLink > input').val(mapImageURL);
+                          $('.elementImage').show();
+                          $('.elementImage').css('background-image', 'url('+mapImageURL+')');
+                        } else {
+                          $('.elementImage').hide();
+                          $('.addNewImageLink > input').val('');
+                        }
+
+
+                        if ($('#editMarker').hasClass('disabled')) {
+                          $('#editMarker, #deleteMarker, #addMapToMarker').removeClass('disabled');
+                        }
+                        openSidebar();
+
+                    }
+                })
+
+        
+
+    }
+
+    function closeSidebar() {
+        $('.sidebar-pane').addClass('active');
+        $('.sidebar-pane#place').removeClass('active');
+        //Open the sidebar if it is closed
+        $('.sidebar').addClass('collapsed');
+        window.location.hash = '#/'+selectedMapID;
+    }
+
+    function openSidebar() {
+        $('.sidebar-pane').removeClass('active');
+        $('.sidebar-pane#place').addClass('active');
+        //Open the sidebar if it is closed
+        $('.sidebar').removeClass('collapsed');
+
+        if ($('#place').attr('data-marker-id')) {
+          window.location.hash = '#/'+selectedMapID+'/marker/' + $('#place').attr('data-marker-id');
+        }
+    }
+
+    // map.on('click', function(e){
+    //   var coord = e.latlng;
+    //   var lat = coord.lat;
+    //   var lng = coord.lng;
+    //   console.log("You clicked the map at latitude: " + lat + " and longitude: " + lng);
+    //   });
+
+
+
+
+    // var myMarker = L.marker([-4.33984375, 4.609375], {title: "MyPoint", alt: "The Big I", draggable: true})
+    // .addTo(markersLayer)
+    // .on('dragend', function() {
+    //     var coord = String(myMarker.getLatLng()).split(',');
+    //     console.log(coord);
+    //     var lat = coord[0].split('(');
+    //     console.log(lat);
+    //     var lng = coord[1].split(')');
+    //     console.log(lng);
+    //     myMarker.bindPopup("Moved to: " + lat[1] + ", " + lng[0] + ".");
+    // });
+
+
+
+    var list = new L.Control.ListMarkers({
+        layer: markersLayer,
+        itemIcon: null
+    });
+    map.addControl(list);
+
+
+
+
+    /* Set the width of the side navigation to 250px and the left margin of the page content to 250px and add a black background color to body */
+    function openNav() {
+        document.getElementById("mySidenav").style.width = "250px";
+        document.getElementById("main").style.marginLeft = "250px";
+        document.body.style.backgroundColor = "rgba(0,0,0,0.4)";
+    }
+
+    /* Set the width of the side navigation to 0 and the left margin of the page content to 0, and the background color of body to white */
+    function closeNav() {
+        document.getElementById("mySidenav").style.width = "0";
+        document.getElementById("main").style.marginLeft = "0";
+        document.body.style.backgroundColor = "white";
+    }
+
+
+    //UI Initialization
+    $('.dropdown').dropdown();
+
+
+    $('body').on('click', '.createNewElementDropdown .item', function() {
+        $('.markerForm').show();
+    });
+
+    //When clicking to add a new marker
+    $('.addMarkerButton').click(function() {
+
+        var title = $('.markerTitleInput').val();
+        var description = $('.markerDescriptionInput').val();
+        createMarkerFromLastLatLng(title, description)
+    })
+
+    $('.ui.search')
+        .search({
+            type: 'category',
+            source: searchIndex
+        });
+
+
+    //Use this to get the size of an image without appending it to the DOM.
+
+    // var img = $("<img />").attr('src', 'http://localhost/map/img/artifacts.png')
+    //     .on('load', function() {
+    //         if (!this.complete || typeof this.naturalWidth == "undefined" || this.naturalWidth == 0) {
+    //             alert('broken image!');
+    //         } else {
+    //             console.log(img[0].width, img[0].height)
+    //         }
+    //     });
+
+}
+    </script>
+
+  </body>
+</html>

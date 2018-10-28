@@ -148,7 +148,14 @@ i.fa.checkmark {
 }
 
 .markerType {
-    margin: 13px;
+    margin-top: 18px;
+    margin-bottom: 18px;
+}
+
+.elementListContainer img.ui.avatar.image {
+    width: auto;
+    height: auto;
+    margin-right: 12px;
 }
 
 .markerForm {
@@ -203,6 +210,7 @@ div#place > h1.sidebar-header > span, div#place .markerTitle, div#place .markerD
 .leaflet-popup-close-button {
     display: none;
 }
+
 
 
 
@@ -305,9 +313,9 @@ div#place > h1.sidebar-header > span, div#place .markerTitle, div#place .markerD
         <!-- Nav tabs -->
         <div class="sidebar-tabs">
             <ul role="tablist">
-                <li><a href="#home" role="tab"><i class="fa fa-bars"></i></a></li>
-                <li><a href="#map" role="tab"><i class="fa fa-map"></i></a></li>
-                <li><a href="#place" role="tab"><i class="fa fa-map-pin"></i></a></li>
+                <li class="home tab"><a href="#home" role="tab"><i class="fa fa-bars"></i></a></li>
+                <li class="map tab"><a href="#map" role="tab"><i class="fa fa-map"></i></a></li>
+                <li class="place tab"><a href="#place" role="tab"><i class="fa fa-map-pin"></i></a></li>
             </ul>
 
             <ul role="tablist">
@@ -320,7 +328,7 @@ div#place > h1.sidebar-header > span, div#place .markerTitle, div#place .markerD
             <div class="sidebar-pane" id="home">
                 <h1 class="sidebar-header">
                     <span class="appTitle"></span>
-                    <span class="sidebar-close"><i class="fa fa-caret-left noIconPadding"></i></span>
+                    <span class="sidebar-close"><i class="fa fa-caret-left"></i></span>
                 </h1>
 
                 <h2 class="ui header">Start adding markers!</h2>
@@ -349,15 +357,7 @@ div#place > h1.sidebar-header > span, div#place .markerTitle, div#place .markerD
   </div>
   <div class="results"></div>
 </div>
-<div class="markerTypeContainer">
-<div class="markerType"><img class="ui avatar image" src="img/artifacts.png"></i>Codex page of Time</div>
-<div class="markerType"><img class="ui avatar image" src="img/people.png"></i>Gil Tidemaker</div>
-<div class="markerType"><img class="ui avatar image" src="img/places.png"></i>Greendale</div>
-<div class="markerType"><img class="ui avatar image" src="img/people.png"></i>Eian Smarth</div>
-<div class="markerType"><img class="ui avatar image" src="img/people.png"></i>Overlord Vergoth</div>
-<div class="markerType"><img class="ui avatar image" src="img/places.png"></i>Laboo</div>
-<div class="markerType"><img class="ui avatar image" src="img/places.png"></i>Ganelon</div>
-<div class="markerType"><img class="ui avatar image" src="img/artifacts.png"></i>Skyblade</div>
+<div class="elementListContainer">
 </div>
             </div>
 
@@ -385,6 +385,7 @@ div#place > h1.sidebar-header > span, div#place .markerTitle, div#place .markerD
   </div>
 </div></h2>
                 <p class="mapDescription"></p>
+                <div class="mapLayerContainer" style="display: none;">
                 <h3 class="currentMapLayer">
                     <div class="ui horizontal divider">
         Current layer
@@ -426,7 +427,7 @@ div#place > h1.sidebar-header > span, div#place .markerTitle, div#place .markerD
     </div>
  
             </div>
-
+</div>
             <div class="sidebar-pane" id="place">
                 <h1 class="sidebar-header">
                     <span>Current marker</span>
@@ -442,6 +443,12 @@ div#place > h1.sidebar-header > span, div#place .markerTitle, div#place .markerD
           <i class="trash icon"></i>
         </div>
       </div>
+
+      <!-- <form action="upload.php" method="post" enctype="multipart/form-data">
+    Select image to upload:
+    <input type="file" name="fileToUpload" id="fileToUpload">
+    <input type="submit" value="Upload Image" name="submit">
+</form> -->
 
       <div class="ui right floated main menu markerContextMenu">
         
@@ -493,7 +500,7 @@ div#place > h1.sidebar-header > span, div#place .markerTitle, div#place .markerD
     <script>
 
     var appInit = {
-    appTitle: "Worldmappy",
+    appTitle: "Cartonomicon",
     mapSource: "http://192.241.199.220/maps/",
     markerLayerSource: "http://192.241.199.220/marker-layers/",
     markerSource: "http://192.241.199.220/markers/",
@@ -510,6 +517,18 @@ $('#image-map').attr('data-map-id', selectedMapID);
 var storedMaps;
 var storedMarkerLayers;
 var storedMarkers;
+
+var activeMarkers = [];
+var map; // currently-active map
+
+var markersLayer;
+
+var list; // list to generate listmarkers
+var searchIndex;
+
+function fetchData() {
+
+
 
 
 //Maps
@@ -532,7 +551,7 @@ $.ajax({
 
                 //Markers
                 $.ajax({
-                    url: appInit.markerSource + appInit.limitString,
+                    url: appInit.markerSource + appInit.limitString + "&mapID=" + selectedMapID,
                     method: "GET",
                     success: function(data) {
 
@@ -542,12 +561,12 @@ $.ajax({
                         var storedElementTypes = [];
 
                         //Build search index
-                        var searchIndex = [];
+                        searchIndex = [];
                         var customIcons = {}
 
                         for (var i = 0; i < storedMarkers.length; i++) {
                           storedElementTypes.push(storedMarkers[i].elementType)
-                          searchIndex.push({category: storedMarkers[i].elementType.title, title: storedMarkers[i].title})
+                          searchIndex.push({category: storedMarkers[i].elementType.title ? storedMarkers[i].elementType.title : "No category", title: storedMarkers[i].title, })
                         }
 
                         var uniq = new Set(storedElementTypes.map(e => JSON.stringify(e)));
@@ -562,106 +581,6 @@ $.ajax({
 //Init the app data
 $('.appTitle').text(appInit.appTitle);
 
-
-// var searchIndex = [{
-//         category: 'Places',
-//         title: 'Ignis Fatuus'
-//     },
-//     {
-//         category: 'Places',
-//         title: 'Beady Eye Inn'
-//     },
-//     {
-//         category: 'Places',
-//         title: 'Zeppelin of the Overlord Vergoth'
-//     },
-//     {
-//         category: 'Places',
-//         title: 'Gil Tidemaker'
-//     },
-//     {
-//         category: 'People',
-//         title: 'Bennec Brandt'
-//     },
-//     {
-//         category: 'People',
-//         title: 'Thaddius Brandt'
-//     },
-//     {
-//         category: 'People',
-//         title: 'Overlord Vergoth'
-//     },
-//     {
-//         category: 'People',
-//         title: 'Eian Smarth'
-//     },
-//     {
-//         category: 'People',
-//         title: 'Skrap the Dapper'
-//     },
-//     {
-//         category: 'Artifacts',
-//         title: 'Skyblade'
-//     },
-//     {
-//         category: 'Artifacts',
-//         title: 'The Codex page of Time'
-//     },
-//     {
-//         category: 'Artifacts',
-//         title: 'Triforce of Courage'
-//     }
-
-//     // etc
-// ];
-
-
-
-// var storedMarkers = [{
-//         lastLatLng: [-10.21875, 8.25],
-//         title: "Ignis Fatuus",
-//         description: "A wizarding academy.",
-//         elementType: "places", //Server-generated ID
-//         markerLayer: "kingdoms", //Server-generated ID
-//         _id: "1"
-//     },
-//     {
-//         lastLatLng: [-14.08, 11.684],
-//         title: "Durandal",
-//         description: "A place.",
-//         elementType: "places", //Server-generated ID
-//         markerLayer: "kingdoms", //Server-generated ID
-//         _id: "2"
-//     }
-// ]
-
-
-// var storedMaps = [{
-//         title: "The Kharlian Continents",
-//         mapImageURL: "img/worldmap.jpg",
-//         _id: "1"
-//     },
-//     {
-//         title: "Meridiem",
-//         mapImageURL: "img/worldmap.jpg",
-//         _id: "2"
-//     },
-//     {
-//         title: "The Underdark",
-//         mapImageURL: "img/worldmap.jpg",
-//         _id: "3"
-//     },
-//     {
-//         title: "The Moon",
-//         mapImageURL: "img/worldmap.jpg",
-//         _id: "4"
-//     },
-//     {
-//         title: "The Astral Plane",
-//         mapImageURL: "img/worldmap.jpg",
-//         _id: "5"
-//     }
-// ]
 
 var storedElementTypes = [{
         _id: "1",
@@ -683,22 +602,6 @@ var storedElementTypes = [{
     }
 ]
 
-// var mapObject = {
-//     mapTitle: "The Kharlian Continents",
-//     mapDescription: "Home to the largest bastion of civilization in the known world, the Kharlian trinity are a formerly-unified set of three continents that were fissured and blown into three by a violent, destructive event. It houses many territories such as Alberea, Lerhyn, and Ganelon.",
-//     initData: {
-//         minZoom: 5,
-//         maxZoom: 10,
-//         center: [0, 0],
-//         zoom: 0,
-//         boxZoom: true,
-//         worldCopyJump: false,
-//         crs: L.CRS.Simple,
-//         w: 9645,
-//         h: 10218,
-//         url: 'img/worldmap.jpg'
-//     }
-// }
 
 var activeItem = "";
 for (var i = 0; i < storedMaps.length; i++) {
@@ -709,14 +612,11 @@ for (var i = 0; i < storedMaps.length; i++) {
 
   
 
-
-
   var mapItemTemplate = '<a href="/map/#/'+storedMaps[i]._id+'/" class="item '+activeItem+'" id="'+storedMaps[i]._id+'">'+storedMaps[i].title+'</a>'
 
   $('.mapContainer').append(mapItemTemplate);
 
   activeItem = "";
-
 }
 
 main(mapObject, storedElementTypes, searchIndex);
@@ -732,13 +632,23 @@ main(mapObject, storedElementTypes, searchIndex);
 });
 
 
+}
 
 
 
-
-
+function selectActiveMarkerByID(markerID) {
+      for (marker in activeMarkers) {
+        if (activeMarkers[marker].options.id == markerID) {
+          return activeMarkers[marker];
+        }
+      }
+    }
 
 function main(mapObject, storedElementTypes, searchIndex) {
+
+        if (map) {
+        map.remove();
+      }
 
 
          function getMenuPosition(mouse, direction, scrollDir) {
@@ -766,7 +676,7 @@ function main(mapObject, storedElementTypes, searchIndex) {
     // Using leaflet.js to pan and zoom a big image.
     // See also: http://kempe.net/blog/2014/06/14/leaflet-pan-zoom-image.html
     // create the slippy map
-    var map = L.map('image-map', {
+    map = L.map('image-map', {
         minZoom: 5,
         maxZoom: 10,
         center: [0, 0],
@@ -801,8 +711,9 @@ function main(mapObject, storedElementTypes, searchIndex) {
 
 
 
-    var markersLayer = new L.LayerGroup(); //layer contain searched elements
+    markersLayer = new L.LayerGroup(); //layer contain searched elements
     map.addLayer(markersLayer);
+
 
 
     map.on("click", function(e) {
@@ -838,7 +749,7 @@ function main(mapObject, storedElementTypes, searchIndex) {
     //Populate existing markers
     for (var i = 0; i < storedMarkers.length; i++) {
       if (selectedMapID == storedMarkers[i].mapID) {
-        addMarkerData(storedMarkers[i].lastLatLng, storedMarkers[i].description, storedMarkers[i].title, storedMarkers[i].elementType, storedMarkers[i].markerLayer, storedMarkers[i]._id, storedMarkers[i].markerBioImage);
+        storedMarkers[i].markerRef = addMarkerData(storedMarkers[i].lastLatLng, storedMarkers[i].description, storedMarkers[i].title, storedMarkers[i].elementType, storedMarkers[i].markerLayer, storedMarkers[i]._id, storedMarkers[i].markerBioImage);
         }
       }
     
@@ -924,6 +835,7 @@ $('.markerTitle, .markerDescription').blur(function() {
       data: {title: title},
       success : function(data) {
         console.log(data);
+        selectActiveMarkerByID(markerID)._popup._content = "<div data-attr-id='"+markerID+"'>"+title+ "</div>"
       }
             
   });
@@ -950,6 +862,8 @@ $('.markerTitle, .markerDescription').blur(function() {
 
 //Various handlers
 
+$('body').off();
+
 $('body').on('click', '.addNewElementButton', function() {
   $('.sidebar').addClass('collapsed');
   $('.ui.modal.addMarker').modal('show');
@@ -971,7 +885,17 @@ $('body').on('click', '.cancelMenuButton', function() {
 
 
 $('body').on('click', '#deleteMarker', function() {
-  deleteMarker();
+  var markerID = $('#place').attr('data-attr-id');
+  if (confirm("Are you sure?")) {
+    deleteMarker(markerID);
+  }
+})
+
+$('body').on('click', '.markerType', function() {
+  var markerID = $(this).attr('data-marker-id');
+  var markerToSelect = selectActiveMarkerByID(markerID);
+  markerToSelect.options.selectThisMarker();
+  markerToSelect.options.flyTo();
 })
 
 $('body').on('click', '#editMarker', function() {
@@ -1030,10 +954,36 @@ function updateMarkerImage(imageURL) {
 }
 } 
 
-function deleteMarker() {
-  var markerID = $('#place').attr('data-marker-id');
+function deleteMarkerByID(id) {
 
-  if (confirm("Are you sure?")) {
+  $.ajax({
+      url: appInit.markerSource + markerID,
+      method: "DELETE",
+      success : function(data) {
+        closeSidebar();
+        
+        for (marker in activeMarkers) {
+          activeMarkers[marker].options.deleteMarker();
+        }
+
+
+        //refreshMarkers();
+        //^ a function to clear the current layer and repopulate with data from the server
+      }
+            
+  });
+
+
+}
+
+function deleteMarker(id) {
+
+  if (!id) {
+  var markerID = $('#place').attr('data-marker-id');
+  } else {
+    markerID = id;
+  }
+
   $.ajax({
       url: appInit.markerSource + markerID,
       method: "DELETE",
@@ -1047,7 +997,7 @@ function deleteMarker() {
       }
             
   });
-}
+
 
 }
 
@@ -1062,7 +1012,7 @@ function hideMarkerMenu() {
 }
 
 
-    function addMarkerData(lastLatLng, description, title, elementType, markerLayer, id, markerBioImage, mapID) {
+    function addMarkerData(lastLatLng, description, title, elementType, markerLayer, id, markerBioImage, mapID, type) {
 
       var bubbleIcon = L.icon({
                           iconUrl: 'img/bubble.png',
@@ -1083,7 +1033,7 @@ function hideMarkerMenu() {
               console.log(this.lastLatLng)
             },
             deleteMarker : function() {
-              mp.remove();
+                mp.remove();
             },
             selectThisMarker: function() {
 
@@ -1127,7 +1077,10 @@ function hideMarkerMenu() {
                           $('#editMarker, #deleteMarker, #addMapToMarker').removeClass('disabled');
                         }
 
+                        if (type !== "quickMarker") {
                         openSidebar();
+                        }
+
 
                     }
                 })
@@ -1136,7 +1089,16 @@ function hideMarkerMenu() {
 
     }
             
-        }).bindPopup("<div data-attr-id='"+id+"'<b>" + title + "</b>").addTo(markersLayer);
+        }).bindPopup("<div data-attr-id='"+id+"'>" + title + "</div>").addTo(markersLayer);
+
+        activeMarkers.push(mp);
+        
+
+        if ($('.elementListContainer > .markerType').length <= 10) {
+        var elementTemplate = '<div class="markerType" data-marker-id="'+mp.options.id+'"><img class="ui avatar image" src="https://unpkg.com/leaflet@1.3.4/dist/images/marker-icon.png"></i>'+mp.options.title+'</div>'
+
+        $('.elementListContainer').append(elementTemplate)
+        }
 
 
         mp.on('click', function(e) {
@@ -1190,9 +1152,12 @@ function hideMarkerMenu() {
         if (selectedMarkerID == id) {
           mp.options.selectThisMarker();
           lastSelectedMarker = mp;
+          
           openSidebar();
         }
-        
+     
+        return mp;
+
     }
 
 
@@ -1240,7 +1205,7 @@ function hideMarkerMenu() {
                 $('.elementImage').hide();
               }
 
-              openSidebar();
+              closeSidebar();
             
             }
             
@@ -1257,9 +1222,6 @@ function hideMarkerMenu() {
 
     }
 
-    function selectMarkerByID(markerID) {
-      //TODO: THIS
-    }
 
     function selectMarker(marker, mapImageURL) {
 
@@ -1301,7 +1263,7 @@ function hideMarkerMenu() {
                         if ($('#editMarker').hasClass('disabled')) {
                           $('#editMarker, #deleteMarker, #addMapToMarker').removeClass('disabled');
                         }
-                        openSidebar();
+                        closeSidebar();
 
                     }
                 })
@@ -1311,15 +1273,19 @@ function hideMarkerMenu() {
     }
 
     function closeSidebar() {
-        $('.sidebar-pane').addClass('active');
-        $('.sidebar-pane#place').removeClass('active');
+        
         //Open the sidebar if it is closed
         $('.sidebar').addClass('collapsed');
         window.location.hash = '#/'+selectedMapID;
+        $('.sidebar-pane').addClass('active');
+        $('.sidebar-pane#place').removeClass('active');
     }
 
-    function openSidebar() {
+    function openSidebar() { // Opens the sidebar to the "place" tab
         $('.sidebar-pane').removeClass('active');
+        $('.tab').removeClass('active');
+
+        $('.tab.place').addClass('active');
         $('.sidebar-pane#place').addClass('active');
         //Open the sidebar if it is closed
         $('.sidebar').removeClass('collapsed');
@@ -1353,11 +1319,11 @@ function hideMarkerMenu() {
 
 
 
-    var list = new L.Control.ListMarkers({
-        layer: markersLayer,
-        itemIcon: null
-    });
-    map.addControl(list);
+    // list = new L.Control.ListMarkers({
+    //     layer: markersLayer,
+    //     itemIcon: null
+    // });
+    // map.addControl(list);
 
 
 
@@ -1411,11 +1377,9 @@ function hideMarkerMenu() {
     //         }
     //     });
 
-
-
-
-
 }
+
+fetchData();
     </script>
 
     <script src="js/leaflet-list-markers.js"></script>

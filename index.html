@@ -780,7 +780,7 @@ a.ui.button.upOneLevelButton {
 
 
     var appInit = {
-    appTitle: "Cartonomicon",
+    appTitle: "Cartonomicon (BETA)",
     mapSource: "/map/api.php/records/maps",
     markerLayerSource: "/map/api.php/records/marker_layers",
     markerSource: "/map/api.php/records/markers",
@@ -1621,6 +1621,13 @@ function main(mapObject, storedElementTypes, markerSearchIndex) {
             },
             success: function(data) {
                 console.log(data, markerID)
+
+                //Remove marker from list of existing elements
+                $('.elementListContainer > .markerType[data-marker-id="'+markerID+'"]').remove();
+
+                //Remove marker from search index
+
+                //Add marker to storage window
                 var elementTemplate = '<div class="markerType" data-marker-id="' + markerID + '"><img class="ui avatar image" src="https://unpkg.com/leaflet@1.3.4/dist/images/marker-icon.png"></i>' + selectActiveMarkerByID(markerID).options.title + '</div>'
 
                     $('.storedElementListContainer').append(elementTemplate)
